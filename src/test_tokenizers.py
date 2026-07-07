@@ -1,37 +1,80 @@
-from pathlib import Path
-import re
-from tokenizer import SimpleTokenizerV1
-from importlib.metadata import version
-import tiktoken
-import torch
+import marimo
+
+app = marimo.App()
 
 
-print("torch version: ", torch.__version__)
-print(torch.cuda.is_available())
+@app.cell
+def __():
+    from pathlib import Path
+    import re
+    from tokenizer import SimpleTokenizerV1
+    from data_loader import create_dataloader_v1, tokenizer
+    import torch
+    from importlib.metadata import version
+    return (
+        Path,
+        SimpleTokenizerV1,
+        create_dataloader_v1,
+        re,
+        tokenizer,
+        torch,
+        version,
+    )
 
 
-verdict_path = Path('data', 'the_verdict.txt')
-
-print(f"path is {verdict_path}")
-
-with open(verdict_path, "r") as verdict_file:
-    verdict_text = verdict_file.read()
-
-tokenizer = tiktoken.get_encoding("gpt2")
-enc_text = tokenizer.encode(verdict_text)
-enc_sample = enc_text[50:]
-
-context_size = 4
-x = enc_sample[:context_size]
-y = enc_sample[1:context_size+1]
+@app.cell
+def __(torch):
+    print("torch version: ", torch.__version__)
+    print(torch.cuda.is_available())
+    return
 
 
-# split = re.split(r'([,.:;?_!"()\']|--|\s)', verdict_text)
-# split = [x for x in split if x.strip()]
+@app.cell
+def __(Path):
+    verdict_path = Path('data', 'the_verdict.txt')
+    print(f"path is {verdict_path}")
+    return (verdict_path,)
 
-# all_words   = sorted(set(split))
-# all_words.extend(["<|endoftext|>", "<|unk|>"])
-# vocab       = {token:integer for integer,token in enumerate(all_words)}
+
+@app.cell
+def __(verdict_path):
+    with open(verdict_path, "r") as verdict_file:
+        verdict_text = verdict_file.read()
+    return (verdict_text,)
+
+
+@app.cell
+def __(tokenizer, torch):
+    vocab_size = tokenizer.n_vocab
+    output_dim = 256
+    max_length = 4
+    embedding_layer = torch.nn.Embedding(vocab_size, output_dim)
+    return embedding_layer, max_length, output_dim, vocab_size
+
+
+@app.cell
+def __(create_dataloader_v1, max_length, verdict_text):
+    dataloader = create_dataloader_v1(
+        verdict_text,
+        batch_size=8,
+        max_length=max_length,
+        stride=max_length,
+        shuffle=False,
+    )
+    return (dataloader,)
+
+
+@app.cell
+def __(dataloader):
+    data_iterator = iter(dataloader)
+    inputs, targets = next(data_iterator)
+    print("Token IDs: \n", inputs)
+    print("\nInputs shape:\n", inputs.shape)
+    return data_iterator, inputs, targets
+
+
+if __name__ == "__main__":
+    app.run()
 
 # tokenizer = SimpleTokenizerV1(vocab)
 # text1 = "Hello, do you like tea?"
