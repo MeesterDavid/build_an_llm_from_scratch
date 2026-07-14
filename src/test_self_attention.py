@@ -121,13 +121,36 @@ def _(attention_scores_2, inputs, torch):
 
     print(context_vector_2)
 
-    context_vector_2 = (attention_weights_2 @ inputs).sum()
+    context_vector_2 = attention_weights_2 @ inputs
     
-    return
+    return (context_vector_2,)
 
 
 @app.cell
-def _():
+def _(inputs):
+    attention_scores = inputs @ inputs.T
+    attention_scores
+
+    return (attention_scores,)
+
+
+@app.cell
+def _(attention_scores, torch):
+    attention_weights = torch.softmax(attention_scores, dim=1) # dim = 1 because each row represents one input, and you want the attentions per input
+    attention_weights
+    return (attention_weights,)
+
+
+@app.cell
+def _(attention_weights, inputs):
+    context_vectors = attention_weights @ inputs
+    context_vectors
+    return (context_vectors,)
+
+
+@app.cell
+def _(context_vector_2, context_vectors, torch):
+    assert torch.allclose(context_vectors[1], context_vector_2)
     return
 
 
