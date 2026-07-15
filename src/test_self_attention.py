@@ -122,7 +122,6 @@ def _(attention_scores_2, inputs, torch):
     print(context_vector_2)
 
     context_vector_2 = attention_weights_2 @ inputs
-    
     return (context_vector_2,)
 
 
@@ -130,7 +129,6 @@ def _(attention_scores_2, inputs, torch):
 def _(inputs):
     attention_scores = inputs @ inputs.T
     attention_scores
-
     return (attention_scores,)
 
 
@@ -151,6 +149,86 @@ def _(attention_weights, inputs):
 @app.cell
 def _(context_vector_2, context_vectors, torch):
     assert torch.allclose(context_vectors[1], context_vector_2)
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    # Self Attention with trainable weights
+    """)
+    return
+
+
+@app.cell
+def _(inputs, torch):
+    torch.manual_seed(123)
+    i_1     = inputs[1]
+    dim_input  = i_1.shape[0]
+    dim_output = dim_input-1
+    W_query        = torch.nn.Parameter(torch.rand(dim_input, dim_output), requires_grad = False)
+    W_key          = torch.nn.Parameter(torch.rand(dim_input, dim_output), requires_grad = False)
+    W_value        = torch.nn.Parameter(torch.rand(dim_input, dim_output), requires_grad = False)
+
+    W_query
+    return W_key, W_query, W_value, i_1
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    Compute query, key, value vectors
+    """)
+    return
+
+
+@app.cell
+def _(W_key, W_query, W_value, i_1):
+    query_1 = i_1 @ W_query 
+    key_1 = i_1 @ W_key 
+    value_1 = i_1 @ W_value 
+
+    query_1, key_1, value_1
+    return (query_1,)
+
+
+@app.cell
+def _(W_key, W_value, inputs):
+    keys = inputs @ W_key
+    values = inputs @ W_value
+    keys, values
+    return keys, values
+
+
+@app.cell
+def _(keys, query_1, torch, values):
+    _attention_scores_1 = keys @ query_1
+    _attention_weights_1 = torch.softmax(_attention_scores_1/keys.shape[-1]**0.5, dim=-1)
+    _context_vector_1 = _attention_weights_1 @ values
+    _context_vector_1
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    Use custom made class
+    """)
+    return
+
+
+@app.cell
+def _(inputs, torch):
+    from self_attention import SelfAttentionV1
+
+    torch.manual_seed(123)
+    sa_v1 = SelfAttentionV1(3,2)
+    sa_v1(inputs)
+    return
+
+
+@app.cell
+def _():
     return
 
 
